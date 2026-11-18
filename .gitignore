@@ -1,0 +1,17 @@
+# Gradle
+.gradle/
+build/
+.kotlin/
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.vscode/
+.settings/
+.project
+.classpath
+bin/
+# Claude Code
+.claude/

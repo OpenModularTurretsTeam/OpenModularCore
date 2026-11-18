@@ -1,0 +1,8 @@
+# JitPack builds a tag the first time someone requests it and serves the six modules as
+# com.github.OpenModularTurretsTeam.OpenModularCore:<module>:<tag>.
+# Gradle 9 needs JDK 17 or newer to run; 17 is also the core's compile toolchain, so nothing is downloaded.
+# The tests (both runs) are not run here: they run in CI and locally before tagging (./gradlew check).
+jdk:
+  - openjdk17
+install:
+  - ./gradlew publishToMavenLocal -x test -Pversion=$VERSION
