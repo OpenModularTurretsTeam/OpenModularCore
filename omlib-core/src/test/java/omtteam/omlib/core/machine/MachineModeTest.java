@@ -51,4 +51,33 @@ class MachineModeTest {
         assertEquals("inverted", MachineMode.INVERTED.getSerializedName());
         assertEquals("noninverted", MachineMode.NONINVERTED.getSerializedName());
     }
+
+    @Test
+    void ordinalsInRangeGiveTheirMode() {
+        for (MachineMode mode : MachineMode.values()) {
+            assertEquals(mode, MachineMode.byOrdinal(mode.ordinal(), null));
+        }
+    }
+
+    @Test
+    void ordinalsAreThe3xSaveOrder() {
+        // 1.12 worlds and memory cards store the mode as this ordinal (since 3.x), so the order must not change
+        assertEquals(MachineMode.ALWAYS_ON, MachineMode.byOrdinal(0, MachineMode.INVERTED));
+        assertEquals(MachineMode.ALWAYS_OFF, MachineMode.byOrdinal(1, MachineMode.INVERTED));
+        assertEquals(MachineMode.INVERTED, MachineMode.byOrdinal(2, MachineMode.ALWAYS_ON));
+        assertEquals(MachineMode.NONINVERTED, MachineMode.byOrdinal(3, MachineMode.INVERTED));
+        assertEquals(4, MachineMode.values().length);
+    }
+
+    @Test
+    void negativeOrdinalsFallBack() {
+        assertEquals(MachineMode.INVERTED, MachineMode.byOrdinal(-1, MachineMode.INVERTED));
+        assertEquals(MachineMode.ALWAYS_OFF, MachineMode.byOrdinal(Integer.MIN_VALUE, MachineMode.ALWAYS_OFF));
+    }
+
+    @Test
+    void tooLargeOrdinalsFallBack() {
+        assertEquals(MachineMode.INVERTED, MachineMode.byOrdinal(MachineMode.values().length, MachineMode.INVERTED));
+        assertEquals(MachineMode.ALWAYS_ON, MachineMode.byOrdinal(Integer.MAX_VALUE, MachineMode.ALWAYS_ON));
+    }
 }

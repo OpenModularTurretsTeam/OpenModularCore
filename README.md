@@ -17,6 +17,7 @@ Every Minecraft version of the mods builds against the same released version of 
 `omt-core` depends on `omlib-core`, and `omt-core-j8` on `omlib-core-j8`.
 `CamoPermissions` is in `omlib-core` (`omtteam.omlib.core.camo`), so that OMPD on 1.12.2 can use it without `omt-core-j8`.
 `MachineMode` and `TargetingSettings` are in `omlib-core` (`omtteam.omlib.core.machine`), because OMLib's 1.12.2 game layer uses them.
+The memory card data and its trust rules (`MemoryCardData`, `MemoryCardRules`) are in `omlib-core` (`omtteam.omlib.core.card`), because the released OMT 4.0.1 for 1.12.2 calls them in OMLib; the base part of a card is `BaseCardRules` in `omt-core` (`omtteam.openmodularturrets.core.card`).
 `oml-core` uses no other core.
 
 The source is written for Java 17.
@@ -39,6 +40,13 @@ dependencies {
     implementation("com.github.OpenModularTurretsTeam.OpenModularCore:omt-core:${property("core_version")}")
 }
 ```
+
+`core_version` is the tag, e.g. `2.0.0`.
+Tags follow semantic versioning: a public class leaving a module or a changed public signature raises the major version.
+1.0.0 was the first release.
+2.0.0 (next) moves `MemoryCardData` and the trust part of `MemoryCardRules` (`canCopy`, `canPaste`, `captureTrust`, `applyTrust`) from `omt-core` to `omlib-core` (`omtteam.omlib.core.card`).
+`MemoryCardRules.capture` and `apply` become `BaseCardRules` in `omt-core` (`omtteam.openmodularturrets.core.card`).
+It also brings back `MachineMode.byOrdinal(int, MachineMode)`.
 
 A workspace that has this repository checked out next to it (`includeBuild("../OpenModularCore")`) builds against the local source instead.
 

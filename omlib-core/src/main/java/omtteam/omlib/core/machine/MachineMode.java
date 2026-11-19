@@ -41,6 +41,15 @@ public enum MachineMode {
         return values[(ordinal() + 1) % values.length];
     }
 
+    /**
+     * The mode with this ordinal, or {@code fallback} if there is none (out of range). 1.12.2 saves and sends the mode
+     * as its ordinal; the released OMT 4.0.1 for 1.12.2 calls this method.
+     */
+    public static MachineMode byOrdinal(int ordinal, MachineMode fallback) {
+        MachineMode[] values = values();
+        return ordinal >= 0 && ordinal < values.length ? values[ordinal] : fallback;
+    }
+
     /** The mode with this serialized name, or {@code fallback} if there is none (unknown or missing saved value). */
     public static MachineMode bySerializedName(String name, MachineMode fallback) {
         for (MachineMode mode : values()) {

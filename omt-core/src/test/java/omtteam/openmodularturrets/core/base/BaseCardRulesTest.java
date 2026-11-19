@@ -1,23 +1,23 @@
 package omtteam.openmodularturrets.core.base;
 
+import omtteam.omlib.core.card.MemoryCardData;
+import omtteam.omlib.core.card.MemoryCardRules;
 import omtteam.omlib.core.machine.MachineMode;
-import omtteam.openmodularturrets.core.card.MemoryCardData;
-import omtteam.openmodularturrets.core.card.MemoryCardRules;
-import omtteam.omlib.core.camo.CamoLight;
 import omtteam.omlib.core.security.AccessLevel;
-import omtteam.omlib.core.security.AccessProfile;
 import omtteam.omlib.core.security.PlayerInfo;
 import omtteam.omlib.core.security.SecurityEnvironment;
 import omtteam.omlib.core.security.TrustManager;
 import omtteam.omlib.core.security.TrustResult;
+import omtteam.omlib.core.world.Face;
+import omtteam.openmodularturrets.core.card.BaseCardRules;
 import omtteam.openmodularturrets.core.item.TurretBaseUpgradeType;
 import omtteam.openmodularturrets.core.turret.TurretType;
-import omtteam.omlib.core.world.Face;
 import omtteam.openmodularturrets.core.world.Neighbour;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -25,20 +25,19 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Memory card rules; lives next to the base logic tests to share their fakes.
+ * The base part of the memory card rules ({@link BaseCardRules}); lives next to the base logic tests to share their
+ * fakes. The card data and the trust part are tested in OMLib's core ({@code MemoryCardDataTest},
+ * {@code MemoryCardRulesTest}).
  */
-class MemoryCardRulesTest {
+class BaseCardRulesTest {
     private static final PlayerInfo OWNER = player("Owner");
     private static final PlayerInfo OTHER_OWNER = player("OtherOwner");
     private static final PlayerInfo ADMIN = player("Admin");
-    private static final PlayerInfo SETTINGS = player("Settings");
     private static final PlayerInfo OPENER = player("Opener");
-    private static final PlayerInfo STRANGER = player("Stranger");
 
     private static final SecurityEnvironment NO_TEAMS = new SecurityEnvironment() {
         @Override
@@ -83,6 +82,7 @@ class MemoryCardRulesTest {
         assertEquals(TrustResult.SUCCESS, logic.getTrustManager().setAccessLevel(owner, player.uuid(), level));
     }
 
+    /** A whole base card: the base part from here, the trust part from OMLib's {@link MemoryCardRules}. */
     @Test
     void settingsSurviveACopyAndPaste() {
         TurretBaseLogic source = base(OWNER);
@@ -98,7 +98,7 @@ class MemoryCardRulesTest {
 
         TurretBaseLogic target = base(OTHER_OWNER);
         target.updateNeighbours(Map.of(Face.UP, new Neighbour.Turret(TurretType.MACHINE_GUN_TURRET)));
-        MemoryCardRules.apply(MemoryCardRules.capture(source), target);
+        BaseCardRules.apply(BaseCardRules.capture(source), target);
         MemoryCardRules.applyTrust(MemoryCardRules.captureTrust(source.getTrustManager()), target.getTrustManager());
 
         assertEquals(MachineMode.NONINVERTED, target.getMode());
@@ -112,50 +112,14 @@ class MemoryCardRulesTest {
     }
 
     @Test
-    void pastingKeepsTheOwnerOfTheTargetAndDropsItFromTheList() {
-        TurretBaseLogic source = base(OWNER);
-        trust(source, OWNER, OTHER_OWNER, AccessLevel.ADMIN);
-        TurretBaseLogic target = base(OTHER_OWNER);
-
-        MemoryCardRules.applyTrust(MemoryCardRules.captureTrust(source.getTrustManager()), target.getTrustManager());
-
-        assertEquals(OTHER_OWNER.identity(), target.getTrustManager().getOwner());
-        assertTrue(target.getTrustManager().getTrustedPlayers().isEmpty());
-    }
-
-    @Test
-    void pastingReplacesTheExistingTrustList() {
-        TurretBaseLogic source = base(OWNER);
-        trust(source, OWNER, ADMIN, AccessLevel.ADMIN);
-        TurretBaseLogic target = base(OWNER);
-        trust(target, OWNER, SETTINGS, AccessLevel.CHANGE_SETTINGS);
-
-        MemoryCardRules.applyTrust(MemoryCardRules.captureTrust(source.getTrustManager()), target.getTrustManager());
-
-        assertTrue(target.getTrustManager().getTrustedPlayer(SETTINGS.uuid()).isEmpty());
-        assertTrue(target.getTrustManager().getTrustedPlayer(ADMIN.uuid()).isPresent());
-    }
-
-    @Test
-    void capturedTrustListIsACopy() {
-        TurretBaseLogic source = base(OWNER);
-        trust(source, OWNER, ADMIN, AccessLevel.ADMIN);
-        MemoryCardData.TrustSettings captured = MemoryCardRules.captureTrust(source.getTrustManager());
-
-        source.getTrustManager().removeTrustedPlayer(OWNER, ADMIN.uuid());
-
-        assertEquals(1, captured.trustedPlayers().size());
-    }
-
-    @Test
     void rangeIsClampedToWhatTheTargetCanReach() {
         TurretBaseLogic target = base(OWNER);
         target.updateNeighbours(Map.of(Face.UP, new Neighbour.Turret(TurretType.MACHINE_GUN_TURRET))); // max 18
 
-        MemoryCardRules.apply(new MemoryCardData.BaseSettings(MachineMode.INVERTED, false, false, true, false, 10), target);
+        BaseCardRules.apply(new MemoryCardData.BaseSettings(MachineMode.INVERTED, false, false, true, false, 10), target);
         assertEquals(10, target.getTargetingSettings().getRange(), "a range the target can reach is pasted as it is");
 
-        MemoryCardRules.apply(new MemoryCardData.BaseSettings(MachineMode.INVERTED, false, false, true, false, 99), target);
+        BaseCardRules.apply(new MemoryCardData.BaseSettings(MachineMode.INVERTED, false, false, true, false, 99), target);
         assertEquals(18, target.getTargetingSettings().getRange());
     }
 
@@ -167,7 +131,7 @@ class MemoryCardRulesTest {
         settings.turrets.put(TurretType.MACHINE_GUN_TURRET,
                 FakeSettings.stats(10, 8, 2, 100, 30, 4, 0.06D, 0.1D, 2, 0.2D, 0.08D, 0.1D));
 
-        MemoryCardRules.apply(new MemoryCardData.BaseSettings(MachineMode.INVERTED, false, false, true, false, 99), target);
+        BaseCardRules.apply(new MemoryCardData.BaseSettings(MachineMode.INVERTED, false, false, true, false, 99), target);
         assertEquals(10, target.getTargetingSettings().getMaxRange());
         assertEquals(10, target.getTargetingSettings().getRange());
     }
@@ -180,7 +144,7 @@ class MemoryCardRulesTest {
         settings.turrets.put(TurretType.MACHINE_GUN_TURRET,
                 FakeSettings.stats(30, 8, 2, 100, 30, 4, 0.06D, 0.1D, 2, 0.2D, 0.08D, 0.1D));
 
-        MemoryCardRules.apply(new MemoryCardData.BaseSettings(MachineMode.INVERTED, false, false, true, false, 25), target);
+        BaseCardRules.apply(new MemoryCardData.BaseSettings(MachineMode.INVERTED, false, false, true, false, 25), target);
         assertEquals(30, target.getTargetingSettings().getMaxRange());
         assertEquals(25, target.getTargetingSettings().getRange());
     }
@@ -192,70 +156,29 @@ class MemoryCardRulesTest {
         target.updateNeighbours(Map.of(Face.UP, new Neighbour.Turret(TurretType.MACHINE_GUN_TURRET))); // max 18
         world.upgradeSlots.set(0, FakeSlot.upgrade(TurretBaseUpgradeType.RANGE, 2));
 
-        MemoryCardRules.apply(new MemoryCardData.BaseSettings(MachineMode.INVERTED, false, false, true, false, 30), target);
+        BaseCardRules.apply(new MemoryCardData.BaseSettings(MachineMode.INVERTED, false, false, true, false, 30), target);
         assertEquals(22, target.getTargetingSettings().getRange(), "18 + 2 upgrades * 2, not the old 18");
     }
 
+    /** The settings of a fresh base form a valid base card (the record's checks accept them). */
     @Test
-    void onlyAdminsCopyAndPaste() {
+    void captureOfAFreshBaseMakesAValidBaseCard() {
         TurretBaseLogic logic = base(OWNER);
-        trust(logic, OWNER, ADMIN, AccessLevel.ADMIN);
-        trust(logic, OWNER, SETTINGS, AccessLevel.CHANGE_SETTINGS);
-        trust(logic, OWNER, OPENER, AccessLevel.OPEN_GUI);
-        var trust = logic.getTrustManager();
+        MemoryCardData.BaseSettings captured = BaseCardRules.capture(logic);
 
-        assertTrue(MemoryCardRules.canCopy(trust, OWNER));
-        assertTrue(MemoryCardRules.canPaste(trust, OWNER));
-        assertTrue(MemoryCardRules.canCopy(trust, ADMIN));
-        assertTrue(MemoryCardRules.canPaste(trust, ADMIN));
-        for (PlayerInfo player : List.of(SETTINGS, OPENER, STRANGER)) {
-            assertFalse(MemoryCardRules.canCopy(trust, player), player.name());
-            assertFalse(MemoryCardRules.canPaste(trust, player), player.name());
-        }
+        assertEquals(logic.getMode(), captured.mode());
+        assertEquals(logic.getTargetingSettings().getRange(), captured.range());
+        MemoryCardData card = new MemoryCardData(MemoryCardData.Source.TURRET_BASE, captured,
+                MemoryCardRules.captureTrust(logic.getTrustManager()), null);
+        assertEquals(captured, card.base());
     }
 
+    /** Only static rules: the constructor is private (called here so the coverage threshold counts it). */
     @Test
-    void trustListsAreClampedToTheLevelsOfTheTarget() {
-        TurretBaseLogic source = base(OWNER);
-        trust(source, OWNER, SETTINGS, AccessLevel.CHANGE_SETTINGS);
-        trust(source, OWNER, ADMIN, AccessLevel.ADMIN);
-        TrustManager trap = new TrustManager(NO_TEAMS, () -> { }, AccessProfile.TRUSTED_AND_ADMIN);
-        trap.setOwner(OTHER_OWNER.identity());
-
-        MemoryCardRules.applyTrust(MemoryCardRules.captureTrust(source.getTrustManager()), trap);
-
-        assertEquals(AccessLevel.NONE, trap.getTrustedPlayer(SETTINGS.uuid()).orElseThrow().getAccessLevel());
-        assertEquals(AccessLevel.ADMIN, trap.getTrustedPlayer(ADMIN.uuid()).orElseThrow().getAccessLevel());
-    }
-
-    @Test
-    void trapAdminsCopyAndPasteLikeBaseAdmins() {
-        TrustManager trap = new TrustManager(NO_TEAMS, () -> { }, AccessProfile.TRUSTED_AND_ADMIN);
-        trap.setOwner(OWNER.identity());
-        assertEquals(TrustResult.SUCCESS, trap.addTrustedPlayer(OWNER, ADMIN.identity()));
-        assertEquals(TrustResult.SUCCESS, trap.setAccessLevel(OWNER, ADMIN.uuid(), AccessLevel.ADMIN));
-        assertEquals(TrustResult.SUCCESS, trap.addTrustedPlayer(OWNER, OPENER.identity()));
-
-        assertTrue(MemoryCardRules.canCopy(trap, OWNER));
-        assertTrue(MemoryCardRules.canPaste(trap, ADMIN));
-        assertFalse(MemoryCardRules.canCopy(trap, OPENER));
-        assertFalse(MemoryCardRules.canPaste(trap, STRANGER));
-    }
-
-    @Test
-    void cardsFromABaseNeedBaseSettingsAndTrapCardsDoNot() {
-        MemoryCardData.CamoSettings camo = new MemoryCardData.CamoSettings("minecraft:stone", CamoLight.DEFAULT);
-        MemoryCardData.BaseSettings baseSettings = MemoryCardRules.capture(base(OWNER));
-        MemoryCardData.TrustSettings noTrust = new MemoryCardData.TrustSettings(List.of());
-
-        assertThrows(IllegalArgumentException.class,
-                () -> new MemoryCardData(MemoryCardData.Source.TURRET_BASE, null, noTrust, camo));
-        assertThrows(IllegalArgumentException.class,
-                () -> new MemoryCardData(MemoryCardData.Source.CAMO_TRAP, baseSettings, noTrust, camo));
-        assertThrows(IllegalArgumentException.class,
-                () -> new MemoryCardData(MemoryCardData.Source.CAMO_TRAP, null, noTrust, null));
-        assertNull(new MemoryCardData(MemoryCardData.Source.CAMO_TRAP, null, noTrust, camo).base());
-        assertNull(new MemoryCardData(MemoryCardData.Source.TURRET_BASE, baseSettings, noTrust, null).camo());
-        assertEquals(camo, new MemoryCardData(MemoryCardData.Source.TURRET_BASE, baseSettings, noTrust, camo).camo());
+    void cannotBeInstantiatedFromOutside() throws ReflectiveOperationException {
+        Constructor<BaseCardRules> constructor = BaseCardRules.class.getDeclaredConstructor();
+        assertTrue(Modifier.isPrivate(constructor.getModifiers()));
+        constructor.setAccessible(true);
+        assertNotNull(constructor.newInstance());
     }
 }

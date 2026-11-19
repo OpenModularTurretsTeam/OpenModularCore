@@ -1,7 +1,7 @@
-package omtteam.openmodularturrets.core.card;
+package omtteam.omlib.core.card;
 
-import omtteam.omlib.core.machine.MachineMode;
 import omtteam.omlib.core.camo.CamoLight;
+import omtteam.omlib.core.machine.MachineMode;
 import omtteam.omlib.core.security.TrustedPlayer;
 
 import java.util.List;
@@ -10,6 +10,9 @@ import java.util.Objects;
 /**
  * What a turret memory card stores (3.x {@code UsableMetaItem}): the settings of a turret base or of a
  * camouflage trap, to be written to other ones.
+ * <p>
+ * It is in OMLib's core, not OMT's, because the released OMT 4.0.1 for 1.12.2 calls it here (decided by the user,
+ * 2026-11-19); the base settings are read and written by OMT's {@code BaseCardRules}.
  * <p>
  * A card from a base holds its {@link BaseSettings}, the {@link TrustSettings} and, if camouflage is enabled, its
  * {@link CamoSettings}; a card from a trap holds the trust and camouflage settings. Fields documented as nullable are

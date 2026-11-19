@@ -20,9 +20,16 @@ The rules for this repository are in `../CLAUDE.md` (the OMM root), sections "Sh
 - Public signatures that a game layer calls use only Java 8 types or the core's own types (a Java 9+ type becomes a JvmDowngrader stub type on 1.12); `verifyJava8Api` enforces it.
 - Randomness comes in as a `java.util.function.LongSupplier` (decided by the user, 2026-11-18), never `java.util.random.RandomGenerator` or `java.util.Random`.
   The game layer passes its random source's `nextLong` (1.12 `world.rand::nextLong`, modern `level.random::nextLong`); the core derives bounded draws and doubles from it (`BoundedDraw` in `oml-core`).
-- Classes stay in the module of the mod they came from, with two exceptions (decided by the user, 2026-11-18):
-  - `CamoPermissions` is in `omlib-core` (`omtteam.omlib.core.camo`, next to `CamoLight`), so that OMPD on 1.12 can use it without `omt-core-j8`.
-  - `MachineMode` and `TargetingSettings` are in `omlib-core` (`omtteam.omlib.core.machine`), because OMLib's 1.12 game layer uses them and OMLib cannot depend on `omt-core`.
+- Classes stay in the module of the mod they came from, with three exceptions:
+  - `CamoPermissions` is in `omlib-core` (`omtteam.omlib.core.camo`, next to `CamoLight`), so that OMPD on 1.12 can use it without `omt-core-j8` (decided by the user, 2026-11-18).
+  - `MachineMode` and `TargetingSettings` are in `omlib-core` (`omtteam.omlib.core.machine`), because OMLib's 1.12 game layer uses them and OMLib cannot depend on `omt-core` (decided by the user, 2026-11-18).
+  - `MemoryCardData` and `MemoryCardRules` (the card data and the trust part: `canCopy`, `canPaste`, `captureTrust`, `applyTrust`) are in `omlib-core` (`omtteam.omlib.core.card`), because the released OMT 4.0.1 for 1.12 calls them in OMLib, and the new 1.12 OMLib must keep running it (decided by the user, 2026-11-19).
+    The base part of a card (`capture`, `apply`) is `BaseCardRules` in `omt-core` (`omtteam.openmodularturrets.core.card`), the name OMT 4.0.1 on 1.12 already uses.
+- Binary compatibility with the released 1.12 jars: OMLib 1.12 stays in its 4.x line, so OMT 4.0.1, OMPD 4.0.0 and OML 1.0.0 must run unchanged with it.
+  Never remove or change a member of `omlib-core` that they call (for example `MachineMode.byOrdinal(int, MachineMode)`); check the `omlib-core-j8` jar with `javap` against what the old jars reference.
+- Versions: the tags follow semantic versioning (a public class leaving a module or a changed public signature is a major version).
+  1.0.0 is released; the next tag is 2.0.0 (`MemoryCardData` and the trust part of `MemoryCardRules` left `omt-core`, and its `capture` / `apply` became `BaseCardRules`).
+  The build has no version of its own (a local build is `0.0.0-SNAPSHOT`, JitPack passes the tag).
 - No Java 9+ call that JvmDowngrader has no stub for; `testJava8` catches them as `MissingStubError`.
 - Tests use JUnit 5 and EqualsVerifier 3 (they also run on Java 8); no new dependency without asking the user.
 - Changing a public signature is API design: present options to the user first.

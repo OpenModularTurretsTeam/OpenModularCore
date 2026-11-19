@@ -1,10 +1,10 @@
-package omtteam.openmodularturrets.core.card;
+package omtteam.omlib.core.card;
 
 import omtteam.omlib.core.camo.CamoLight;
+import omtteam.omlib.core.machine.MachineMode;
 import omtteam.omlib.core.security.AccessLevel;
 import omtteam.omlib.core.security.PlayerIdentity;
 import omtteam.omlib.core.security.TrustedPlayer;
-import omtteam.omlib.core.machine.MachineMode;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The card data keeps what the game layer writes to and reads from the card. */
@@ -69,5 +70,23 @@ class MemoryCardDataTest {
         assertEquals("minecraft:stone", card.camo().disguise());
         assertSame(light, card.camo().light());
         assertNull(card.base());
+    }
+
+    @Test
+    void cardsFromABaseNeedBaseSettingsAndTrapCardsDoNot() {
+        MemoryCardData.CamoSettings camo = new MemoryCardData.CamoSettings("minecraft:stone", CamoLight.DEFAULT);
+        MemoryCardData.BaseSettings baseSettings = new MemoryCardData.BaseSettings(MachineMode.INVERTED, false, false,
+                true, false, 0);
+        MemoryCardData.TrustSettings noTrust = new MemoryCardData.TrustSettings(List.of());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> new MemoryCardData(MemoryCardData.Source.TURRET_BASE, null, noTrust, camo));
+        assertThrows(IllegalArgumentException.class,
+                () -> new MemoryCardData(MemoryCardData.Source.CAMO_TRAP, baseSettings, noTrust, camo));
+        assertThrows(IllegalArgumentException.class,
+                () -> new MemoryCardData(MemoryCardData.Source.CAMO_TRAP, null, noTrust, null));
+        assertNull(new MemoryCardData(MemoryCardData.Source.CAMO_TRAP, null, noTrust, camo).base());
+        assertNull(new MemoryCardData(MemoryCardData.Source.TURRET_BASE, baseSettings, noTrust, null).camo());
+        assertEquals(camo, new MemoryCardData(MemoryCardData.Source.TURRET_BASE, baseSettings, noTrust, camo).camo());
     }
 }
