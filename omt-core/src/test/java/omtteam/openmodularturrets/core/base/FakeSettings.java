@@ -1,10 +1,13 @@
 package omtteam.openmodularturrets.core.base;
 
+import omtteam.openmodularturrets.core.item.AddonType;
+import omtteam.openmodularturrets.core.item.TurretBaseUpgradeType;
 import omtteam.openmodularturrets.core.settings.BaseTierStats;
 import omtteam.openmodularturrets.core.settings.LogicSettings;
 import omtteam.openmodularturrets.core.settings.TurretStats;
 import omtteam.openmodularturrets.core.turret.TurretType;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -13,12 +16,14 @@ import java.util.Set;
 /**
  * Test settings using the 3.x defaults for the turrets used in tests.
  */
-final class FakeSettings implements LogicSettings {
+public final class FakeSettings implements LogicSettings {
     final Map<TurretType, TurretStats> turrets = new HashMap<>();
     BaseTierStats[] tiers = {
             new BaseTierStats(500, 50, 1, 1), new BaseTierStats(50000, 100, 1, 1), new BaseTierStats(150000, 1000, 2, 1),
             new BaseTierStats(500000, 2500, 3, 2), new BaseTierStats(10000000, 50000, 4, 2)};
     int[] expanderStacks = {1, 2, 3};
+    final Set<TurretBaseUpgradeType> disabledUpgrades = EnumSet.noneOf(TurretBaseUpgradeType.class);
+    final Set<AddonType> disabledAddons = EnumSet.noneOf(AddonType.class);
     int solar = 10;
     int reactor = 1600;
     boolean needAmmo = true;
@@ -34,7 +39,7 @@ final class FakeSettings implements LogicSettings {
     final Set<String> forcedHostile = new HashSet<>(Set.of("minecraft:creeper"));
     final Set<String> forcedNeutral = new HashSet<>(Set.of("minecraft:cow"));
 
-    FakeSettings() {
+    public FakeSettings() {
         // 3.x OMTConfig defaults
         turrets.put(TurretType.DISPOSABLE_TURRET, stats(10, 25, 2, 2, 50, 4, 0.05D, 0.1D, 2, 0.2D, 0.08D, 0.1D));
         turrets.put(TurretType.POTATO_CANNON_TURRET, stats(15, 35, 3, 10, 30, 4, 0.05D, 0.1D, 2, 0.2D, 0.08D, 0.1D));
@@ -67,6 +72,16 @@ final class FakeSettings implements LogicSettings {
     @Override
     public int expanderStacks(int tier) {
         return expanderStacks[tier - 1];
+    }
+
+    @Override
+    public boolean upgradeEnabled(TurretBaseUpgradeType type) {
+        return !disabledUpgrades.contains(type);
+    }
+
+    @Override
+    public boolean addonEnabled(AddonType type) {
+        return !disabledAddons.contains(type);
     }
 
     @Override

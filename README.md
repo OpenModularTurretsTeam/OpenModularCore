@@ -48,6 +48,7 @@ Tags follow semantic versioning: a public class leaving a module or a changed pu
 2.0.0 moved `MemoryCardData` and the trust part of `MemoryCardRules` (`canCopy`, `canPaste`, `captureTrust`, `applyTrust`) from `omt-core` to `omlib-core` (`omtteam.omlib.core.card`).
 `MemoryCardRules.capture` and `apply` became `BaseCardRules` in `omt-core` (`omtteam.openmodularturrets.core.card`).
 It also brought back `MachineMode.byOrdinal(int, MachineMode)`.
+2.1.0 (additive) added switches for single upgrades and addons (`LogicSettings.upgradeEnabled` and `addonEnabled`, `default` methods that return `true`) and computer control of a base (`TurretBaseLogic.isComputerControlled`, `setComputerControlled`, `acceptsComputers`, the new component `computerControlled` of `TurretBaseLogic.State`, whose old constructor stays, and the package `omtteam.openmodularturrets.core.computer`).
 
 The mods copy the core classes into their own jars, so players still install one jar per mod.
 

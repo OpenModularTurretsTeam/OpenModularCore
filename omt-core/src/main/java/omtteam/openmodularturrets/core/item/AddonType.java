@@ -3,7 +3,8 @@ package omtteam.openmodularturrets.core.item;
 /**
  * Addons that go into the addon slots of a base. The game layer maps its items to them.
  * <p>
- * {@link #SERIAL_PORT} has no core behaviour; whether an item exists for it is up to the game layer.
+ * {@link #SERIAL_PORT} lets computers access bases of tiers below 5; which computer mods drive it is up to the game
+ * layer, and so is whether an item exists for it.
  */
 public enum AddonType {
     CONCEALER("concealer", 1),
