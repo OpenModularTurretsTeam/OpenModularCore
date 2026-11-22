@@ -352,6 +352,30 @@ class TargetingTest {
         }
 
         @Test
+        void energyDrainTurretTargetsOnlyPlayersWithEnergy() {
+            logic = base(5, Map.of(Face.UP, new Neighbour.Turret(TurretType.ENERGY_DRAIN_TURRET)));
+            logic.setRange(10);
+            logic.setTargetPlayers(true);
+            FakeTarget zombie = zombie(104, 65, 100);
+            zombie.drainable = true;
+            FakeTarget stranger = player(105, 65, 100, STRANGER);
+            search();
+            assertEquals(Optional.empty(), targetId(), "no mobs, and the player carries no energy");
+            stranger.drainable = true;
+            search();
+            assertEquals(Optional.of(stranger.getId()), targetId());
+        }
+
+        @Test
+        void energyDrainTurretStillNeedsPlayerTargeting() {
+            logic = base(5, Map.of(Face.UP, new Neighbour.Turret(TurretType.ENERGY_DRAIN_TURRET)));
+            logic.setRange(10);
+            player(105, 65, 100, STRANGER).drainable = true;
+            search();
+            assertEquals(Optional.empty(), targetId());
+        }
+
+        @Test
         void inactiveBaseDropsAllTargets() {
             zombie(105, 65, 100);
             search();

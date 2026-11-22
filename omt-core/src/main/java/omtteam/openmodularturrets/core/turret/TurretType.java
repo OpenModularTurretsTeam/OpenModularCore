@@ -12,9 +12,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * A turret type: its id, the minimum base tier it needs, the ammunition it consumes and its targeting rules. The 14
- * built-in types are constants here (ported from the 3.x turret tile entities: {@code super(tier)},
- * {@code ammo = …}, {@code requiresAmmo()}); other mods add types with {@link #builder} through the turret API
+ * A turret type: its id, the minimum base tier it needs, the ammunition it consumes and its targeting rules. The 17
+ * built-in types are constants here (the first 14 ported from the 3.x turret tile entities: {@code super(tier)},
+ * {@code ammo = …}, {@code requiresAmmo()}, the last three new in 4.1); other mods add types with {@link #builder} through the turret API
  * ({@code omtteam.openmodularturrets.api}), which registers them in {@link TurretTypes}.
  * <p>
  * Numeric stats (range, fire rate, power, upgrades) are configurable and come from
@@ -65,11 +65,31 @@ public final class TurretType {
             .priorities(10, 10, 20, 40, 10).ignoresScattershot().build();
     public static final TurretType PLASMA_TURRET = builtIn("plasma_turret", 5, null)
             .priorities(10, 10, 20, 1, 10).build();
+    /**
+     * New in 4.1 (issue 324): pushes its target away, see {@link TurretMath#impulse}. The priorities are the slowing
+     * turret's until they are tuned.
+     */
+    public static final TurretType REPELLING_TURRET = builtIn("repelling_turret", 3, null)
+            .priorities(1, 1, 0, 10, 10).ignoresScattershot().build();
+    /**
+     * New in 4.1 (issue 324): pulls its target in, see {@link TurretMath#impulse}. The priorities are the slowing
+     * turret's until they are tuned.
+     */
+    public static final TurretType TRACTOR_TURRET = builtIn("tractor_turret", 3, null)
+            .priorities(1, 1, 0, 10, 10).ignoresScattershot().build();
+    /**
+     * New in 4.1 (issue 324): destroys the energy in a player's armour and held items, see {@link EnergyDrain}. Only
+     * players that carry energy it can drain are targets (user decision). The priorities are the laser turret's
+     * until they are tuned.
+     */
+    public static final TurretType ENERGY_DRAIN_TURRET = builtIn("energy_drain_turret", 5, null)
+            .priorities(5, 10, 2, -10, 10).ignoresScattershot().playersOnly().skipsTargetsWithoutEnergy().build();
 
-    /** The built-in types in their original order. */
+    /** The built-in types in their original order; types added later go at the end. */
     static final List<TurretType> BUILT_IN = List.of(DISPOSABLE_TURRET, POTATO_CANNON_TURRET, CROSSBOW_TURRET,
             MELEE_TURRET, MACHINE_GUN_TURRET, INCENDIARY_TURRET, GRENADE_TURRET, SLOWING_TURRET, ROCKET_TURRET,
-            TELEPORTER_TURRET, ARC_TURRET, LASER_TURRET, RAILGUN_TURRET, PLASMA_TURRET);
+            TELEPORTER_TURRET, ARC_TURRET, LASER_TURRET, RAILGUN_TURRET, PLASMA_TURRET, REPELLING_TURRET, TRACTOR_TURRET,
+            ENERGY_DRAIN_TURRET);
 
     private final String namespace;
     private final String path;
@@ -79,6 +99,8 @@ public final class TurretType {
     private final Set<Face> mountFaces;
     private final boolean usesScattershot;
     private final boolean skipsSlowedTargets;
+    private final boolean playersOnly;
+    private final boolean skipsTargetsWithoutEnergy;
 
     private TurretType(Builder builder) {
         this.namespace = builder.namespace;
@@ -89,6 +111,8 @@ public final class TurretType {
         this.mountFaces = Set.copyOf(builder.mountFaces);
         this.usesScattershot = builder.usesScattershot;
         this.skipsSlowedTargets = builder.skipsSlowedTargets;
+        this.playersOnly = builder.playersOnly;
+        this.skipsTargetsWithoutEnergy = builder.skipsTargetsWithoutEnergy;
     }
 
     /**
@@ -149,7 +173,8 @@ public final class TurretType {
 
     /**
      * Whether scattershot upgrades affect this turret (extra shots, ammo, energy and scatter). Turrets that act once
-     * per shot (melee, slowing, teleporter) ignore them, as the upgrades would only cost extra energy.
+     * per shot (melee, slowing, teleporter, repelling, tractor, energy drain) ignore them, as the upgrades would only
+     * cost extra energy.
      */
     public boolean usesScattershot() {
         return usesScattershot;
@@ -158,6 +183,19 @@ public final class TurretType {
     /** Whether entities that already have slowness are not targeted. */
     public boolean skipsSlowedTargets() {
         return skipsSlowedTargets;
+    }
+
+    /** Whether only players are targeted, whatever the base targets otherwise. */
+    public boolean targetsPlayersOnly() {
+        return playersOnly;
+    }
+
+    /**
+     * Whether entities without energy that can be drained are not targeted, see
+     * {@link omtteam.openmodularturrets.core.target.TargetEntity#hasDrainableEnergy}.
+     */
+    public boolean skipsTargetsWithoutEnergy() {
+        return skipsTargetsWithoutEnergy;
     }
 
     /** All registered types, see {@link TurretTypes#all()}. */
@@ -186,6 +224,8 @@ public final class TurretType {
         private Set<Face> mountFaces = ALL_FACES;
         private boolean usesScattershot = true;
         private boolean skipsSlowedTargets;
+        private boolean playersOnly;
+        private boolean skipsTargetsWithoutEnergy;
 
         private Builder(String namespace, String path) {
             if (!NAMESPACE.matcher(Objects.requireNonNull(namespace)).matches()) {
@@ -237,6 +277,18 @@ public final class TurretType {
         /** Entities that already have slowness are not targeted. */
         public Builder skipsSlowedTargets() {
             this.skipsSlowedTargets = true;
+            return this;
+        }
+
+        /** Only players are targeted (still only when the base targets players). */
+        public Builder playersOnly() {
+            this.playersOnly = true;
+            return this;
+        }
+
+        /** Entities without energy that can be drained are not targeted. */
+        public Builder skipsTargetsWithoutEnergy() {
+            this.skipsTargetsWithoutEnergy = true;
             return this;
         }
 

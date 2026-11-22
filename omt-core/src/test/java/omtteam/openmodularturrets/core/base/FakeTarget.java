@@ -27,6 +27,7 @@ final class FakeTarget extends TargetEntity {
     PlayerIdentity owner;
     boolean tamedHorse;
     boolean slowed;
+    boolean drainable;
 
     FakeTarget(double x, double y, double z, PlayerInfo player) {
         this.x = x;
@@ -133,6 +134,11 @@ final class FakeTarget extends TargetEntity {
     @Override
     public boolean hasSlowness() {
         return slowed;
+    }
+
+    @Override
+    public boolean hasDrainableEnergy() {
+        return drainable;
     }
 
     @Override

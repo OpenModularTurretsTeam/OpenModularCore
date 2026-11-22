@@ -3,6 +3,7 @@ package omtteam.openmodularturrets.core.turret;
 import omtteam.omlib.core.world.Face;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -28,7 +29,8 @@ class TurretTypeTest {
     @Test
     void energyTurretsNeedNoAmmo() {
         Set<TurretType> energyOnly = Set.of(TurretType.MELEE_TURRET, TurretType.SLOWING_TURRET,
-                TurretType.TELEPORTER_TURRET, TurretType.ARC_TURRET, TurretType.LASER_TURRET, TurretType.PLASMA_TURRET);
+                TurretType.TELEPORTER_TURRET, TurretType.ARC_TURRET, TurretType.LASER_TURRET, TurretType.PLASMA_TURRET,
+                TurretType.REPELLING_TURRET, TurretType.TRACTOR_TURRET, TurretType.ENERGY_DRAIN_TURRET);
         for (TurretType type : TurretType.BUILT_IN) {
             assertEquals(energyOnly.contains(type), type.getAmmo().isEmpty(), type.getId());
         }
@@ -50,12 +52,16 @@ class TurretTypeTest {
         assertEquals(3, TurretType.GRENADE_TURRET.getRequiredBaseTier());
         assertEquals(4, TurretType.ARC_TURRET.getRequiredBaseTier());
         assertEquals(5, TurretType.PLASMA_TURRET.getRequiredBaseTier());
+        assertEquals(3, TurretType.REPELLING_TURRET.getRequiredBaseTier());
+        assertEquals(3, TurretType.TRACTOR_TURRET.getRequiredBaseTier());
+        assertEquals(5, TurretType.ENERGY_DRAIN_TURRET.getRequiredBaseTier());
     }
 
     @Test
     void scattershotIsIgnoredByRailgunAndEffectTurrets() {
         Set<TurretType> ignoring = Set.of(TurretType.RAILGUN_TURRET, TurretType.MELEE_TURRET,
-                TurretType.SLOWING_TURRET, TurretType.TELEPORTER_TURRET);
+                TurretType.SLOWING_TURRET, TurretType.TELEPORTER_TURRET, TurretType.REPELLING_TURRET,
+                TurretType.TRACTOR_TURRET, TurretType.ENERGY_DRAIN_TURRET);
         for (TurretType type : TurretType.BUILT_IN) {
             assertEquals(!ignoring.contains(type), type.usesScattershot(), type.getId());
         }
@@ -69,8 +75,23 @@ class TurretTypeTest {
     }
 
     @Test
+    void onlyTheEnergyDrainTurretTargetsPlayersWithEnergy() {
+        for (TurretType type : TurretType.BUILT_IN) {
+            boolean drain = type == TurretType.ENERGY_DRAIN_TURRET;
+            assertEquals(drain, type.targetsPlayersOnly(), type.getId());
+            assertEquals(drain, type.skipsTargetsWithoutEnergy(), type.getId());
+        }
+    }
+
+    @Test
+    void newTurretsComeAfterTheOriginalOnes() {
+        assertEquals(List.of(TurretType.REPELLING_TURRET, TurretType.TRACTOR_TURRET,
+                TurretType.ENERGY_DRAIN_TURRET), TurretType.BUILT_IN.subList(14, 17));
+    }
+
+    @Test
     void idsRoundTrip() {
-        assertEquals(14, TurretType.BUILT_IN.size());
+        assertEquals(17, TurretType.BUILT_IN.size());
         for (TurretType type : TurretType.BUILT_IN) {
             assertEquals(Optional.of(type), TurretType.byId(type.getId()));
             assertEquals(Optional.of(type), TurretType.byId(type.getPath()), "bare paths are built-in ids");
@@ -90,6 +111,8 @@ class TurretTypeTest {
         assertTrue(type.getAmmo().isEmpty());
         assertTrue(type.usesScattershot());
         assertFalse(type.skipsSlowedTargets());
+        assertFalse(type.targetsPlayersOnly());
+        assertFalse(type.skipsTargetsWithoutEnergy());
         for (Face face : Face.values()) {
             assertTrue(type.canMountOn(face));
         }
@@ -105,6 +128,8 @@ class TurretTypeTest {
                 .mountFaces(Face.UP)
                 .ignoresScattershot()
                 .skipsSlowedTargets()
+                .playersOnly()
+                .skipsTargetsWithoutEnergy()
                 .build();
         assertEquals(5, type.getRequiredBaseTier());
         assertEquals(Optional.of(shell), type.getAmmo());
@@ -113,6 +138,8 @@ class TurretTypeTest {
         assertFalse(type.canMountOn(Face.DOWN));
         assertFalse(type.usesScattershot());
         assertTrue(type.skipsSlowedTargets());
+        assertTrue(type.targetsPlayersOnly());
+        assertTrue(type.skipsTargetsWithoutEnergy());
         assertEquals(1, TurretType.builder("othermod", "t").requiredBaseTier(1).build().getRequiredBaseTier(),
                 "tier 1 is the lowest allowed tier");
     }

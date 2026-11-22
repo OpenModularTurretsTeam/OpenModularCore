@@ -1,5 +1,6 @@
 package omtteam.openmodularturrets.core.turret;
 
+import omtteam.omlib.core.world.BlockPosition;
 import omtteam.omlib.core.world.Face;
 import omtteam.openmodularturrets.core.world.Vector3;
 import org.junit.jupiter.api.Test;
@@ -177,5 +178,57 @@ class TurretMathTest {
         assertEquals(0, TurretMath.aimError(new TurretMath.Angles(0, 90), new TurretMath.Angles(120, 90)), 1e-4,
                 "straight up, the yaw does not matter");
         assertEquals(20, TurretMath.aimError(new TurretMath.Angles(170, 0), new TurretMath.Angles(-170, 0)), 1e-4);
+    }
+
+    /** The turret block at the origin: its centre is at (0.5, 0.5, 0.5). */
+    private static final BlockPosition TURRET = new BlockPosition(0, 0, 0);
+
+    @Test
+    void pushIsHorizontalAwayFromTheTurretWithALift() {
+        Vector3 push = TurretMath.impulse(TURRET, new FakePositionTarget(3.5, 5, 4.5), 0.5);
+        assertVector(new Vector3(0.3, TurretMath.MAX_PUSH_LIFT, 0.4), push);
+    }
+
+    @Test
+    void weakPushLiftsOnlyAsMuchAsItPushes() {
+        Vector3 push = TurretMath.impulse(TURRET, new FakePositionTarget(-4.5, 0, 0.5), 0.25);
+        assertVector(new Vector3(-0.25, 0.25, 0), push);
+    }
+
+    @Test
+    void pushStraightAboveOnlyLifts() {
+        assertVector(new Vector3(0, 0.3, 0), TurretMath.impulse(TURRET, new FakePositionTarget(0.5, 6, 0.5), 0.3));
+    }
+
+    @Test
+    void pullIsHorizontalTowardsTheTurret() {
+        Vector3 pull = TurretMath.impulse(TURRET, new FakePositionTarget(6.5, -3, 8.5), -0.5);
+        assertVector(new Vector3(-0.3, 0, -0.4), pull);
+    }
+
+    @Test
+    void pullStopsShortOfTheTurret() {
+        assertVector(new Vector3(0, 0, -0.25), TurretMath.impulse(TURRET, new FakePositionTarget(0.5, 0, 1.75), -2));
+        assertVector(new Vector3(0, 0, 0), TurretMath.impulse(TURRET, new FakePositionTarget(0.5, 0, 1.25), -2));
+        assertVector(new Vector3(0, 0, 0), TurretMath.impulse(TURRET, new FakePositionTarget(0.5, 4, 0.5), -2));
+    }
+
+    @Test
+    void noStrengthNoImpulse() {
+        assertVector(new Vector3(0, 0, 0), TurretMath.impulse(TURRET, new FakePositionTarget(5.5, 0, 0.5), 0));
+    }
+
+    @Test
+    void theSmallestDirectionStillPushesSideways() {
+        double x = 0.5 + TurretMath.MIN_DIRECTION;
+        assertEquals(new Vector3(0.3, 0.3, 0), TurretMath.impulse(TURRET, new FakePositionTarget(x, 0, 0.5), 0.3));
+    }
+
+    @Test
+    void zeroStrengthIsExactlyNoImpulse() {
+        Vector3 none = new Vector3(0, 0, 0);
+        assertEquals(none, TurretMath.impulse(TURRET, new FakePositionTarget(5.5, 0, 0.5), -0.0D));
+        assertEquals(none, TurretMath.impulse(TURRET, new FakePositionTarget(1.5, 0, 0.5), -2),
+                "a target where the pull stops is not moved");
     }
 }

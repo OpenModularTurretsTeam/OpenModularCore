@@ -95,6 +95,7 @@ public final class TargetSelector {
         if (classification == Classification.BLOCKED) return false;
 
         Optional<PlayerInfo> player = entity.getPlayer();
+        if (type.targetsPlayersOnly() && player.isEmpty()) return false;
         if (player.isPresent()) {
             if (!targeting.isTargetPlayers() || !settings.globalCanTargetPlayers()) return false;
             if (trust.isProtectedFromTargeting(player.get())) return false;
@@ -108,6 +109,7 @@ public final class TargetSelector {
 
         // 3.x RelativisticTurretTileEntity.isEntityValidTarget: slowed entities are already "handled"
         if (type.skipsSlowedTargets() && entity.hasSlowness()) return false;
+        if (type.skipsTargetsWithoutEnergy() && !entity.hasDrainableEnergy()) return false;
 
         if (classification == Classification.NEUTRAL && targeting.isTargetPassive() && settings.globalCanTargetNeutrals()) {
             return true;
