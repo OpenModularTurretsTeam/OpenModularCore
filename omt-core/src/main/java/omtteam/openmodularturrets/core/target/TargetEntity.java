@@ -58,6 +58,15 @@ public abstract class TargetEntity {
     /** Has the slowness effect (the slowing turret ignores slowed entities). */
     public abstract boolean hasSlowness();
 
+    /**
+     * Whether the entity carries energy that the energy drain turret could take ({@link
+     * omtteam.openmodularturrets.core.turret.TurretType#skipsTargetsWithoutEnergy}): on players, energy that can be
+     * extracted from their armour, main hand or offhand item. False unless the Minecraft layer overrides it.
+     */
+    public boolean hasDrainableEnergy() {
+        return false;
+    }
+
     /** The default class of the entity, before the config lists override it (see {@code TargetSelector#classify}). */
     public abstract EntityCategory getCategory();
 

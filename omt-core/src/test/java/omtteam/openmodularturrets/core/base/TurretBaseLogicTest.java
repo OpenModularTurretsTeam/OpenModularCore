@@ -400,7 +400,8 @@ class TurretBaseLogicTest {
             TurretBaseLogic logic = base(5);
             upgrade(0, TurretBaseUpgradeType.SCATTERSHOT, 4);
             for (TurretType type : new TurretType[]{TurretType.MELEE_TURRET, TurretType.SLOWING_TURRET,
-                    TurretType.TELEPORTER_TURRET}) {
+                    TurretType.TELEPORTER_TURRET, TurretType.REPELLING_TURRET, TurretType.TRACTOR_TURRET,
+                    TurretType.ENERGY_DRAIN_TURRET}) {
                 assertEquals(0, logic.getScattershotCount(type), type.toString());
             }
             assertEquals(5000, logic.getPowerPerShot(TurretType.SLOWING_TURRET), "no extra energy");

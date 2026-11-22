@@ -1,6 +1,8 @@
 package omtteam.openmodularturrets.core.turret;
 
+import omtteam.omlib.core.world.BlockPosition;
 import omtteam.omlib.core.world.Face;
+import omtteam.openmodularturrets.core.target.TargetEntity;
 import omtteam.openmodularturrets.core.world.Vector3;
 
 import java.util.Objects;
@@ -167,6 +169,37 @@ public final class TurretMath {
         double pitchB = Math.toRadians(b.pitch());
         double cos = Math.cos(pitchA) * Math.cos(pitchB) * Math.cos(yawA - yawB) + Math.sin(pitchA) * Math.sin(pitchB);
         return Math.toDegrees(Math.acos(Math.max(-1.0D, Math.min(1.0D, cos))));
+    }
+
+    /** Most upward speed a push adds, in blocks per tick (vanilla knockback lifts by 0.4). */
+    public static final double MAX_PUSH_LIFT = 0.4D;
+    /** A pull ends this far (horizontally) from the turret's centre, so it never carries the target past it. */
+    public static final double PULL_STOP_DISTANCE = 1.0D;
+    /** Horizontal distances below this (about 1e-6, a power of two so that it is exact) have no direction. */
+    static final double MIN_DIRECTION = 0x1p-20;
+
+    /**
+     * The velocity change of one shot of the repelling or tractor turret (issue 324), in blocks per tick, which the
+     * Minecraft layer adds to the target's motion. A positive {@code strength} pushes the target horizontally away
+     * from the turret's centre and lifts it by {@code min(strength, MAX_PUSH_LIFT)}, as knockback does; a negative
+     * one pulls it horizontally towards the turret, at most as far as {@link #PULL_STOP_DISTANCE} from it. A target
+     * straight above or below the turret is only lifted by a push and not pulled.
+     *
+     * @param turret   the turret's block, in the base's coordinates like the target
+     * @param strength {@link omtteam.openmodularturrets.core.settings.TurretStats#effectStrength}, negative to pull
+     */
+    public static Vector3 impulse(BlockPosition turret, TargetEntity target, double strength) {
+        double dx = target.getX() - (turret.x() + 0.5D);
+        double dz = target.getZ() - (turret.z() + 0.5D);
+        double distance = Math.sqrt(dx * dx + dz * dz);
+        if (strength > 0.0D) {
+            double lift = Math.min(strength, MAX_PUSH_LIFT);
+            if (distance < MIN_DIRECTION) return new Vector3(0.0D, lift, 0.0D);
+            return new Vector3(dx / distance * strength, lift, dz / distance * strength);
+        }
+        double speed = Math.min(-strength, distance - PULL_STOP_DISTANCE);
+        if (speed <= 0.0D) return new Vector3(0.0D, 0.0D, 0.0D);
+        return new Vector3(-dx / distance * speed, 0.0D, -dz / distance * speed);
     }
 
     /**

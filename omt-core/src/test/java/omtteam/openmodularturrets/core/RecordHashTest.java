@@ -56,8 +56,9 @@ class RecordHashTest {
     @Test
     void turretStats() {
         TurretStats stats = new TurretStats(true, 12, 15, 4, 100, 3.5, 6, 0.25, 0.5, 2, 0.75, 0.125, 0.2, 0.3,
-                0.6, 0.4, 12.5);
-        assertEquals(recordHash(true, 12, 15, 4, 100, 3.5, 6, 0.25, 0.5, 2, 0.75, 0.125, 0.2, 0.3, 0.6, 0.4, 12.5),
+                0.6, 0.4, 12.5, 2.25);
+        assertEquals(recordHash(true, 12, 15, 4, 100, 3.5, 6, 0.25, 0.5, 2, 0.75, 0.125, 0.2, 0.3, 0.6, 0.4, 12.5,
+                        2.25),
                 stats.hashCode());
     }
 
