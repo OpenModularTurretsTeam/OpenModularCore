@@ -49,6 +49,18 @@ public final class ProjectileMath {
     }
 
     /**
+     * {@link #damageWithAmp(int, int, double, float)} without rounding the bonus down: the damage amp addon adds a
+     * share of the target's current health (rounded down to whole points first, as {@link #ampBonus} does).
+     *
+     * @param damageAmp the turret type's configured amp factor per addon level
+     * @return {@code damage} unchanged if there is no amp or the target has no health
+     */
+    public static float damageWithAmp(float damage, int ampLevel, double damageAmp, float targetHealth) {
+        if (ampLevel <= 0) return damage;
+        return damage + (float) ampBonus(targetHealth, damageAmp * ampLevel);
+    }
+
+    /**
      * The damage amp addon's extra damage, shared by projectiles and rays: a share of the target's current health,
      * rounded down to whole points first.
      *
@@ -58,13 +70,42 @@ public final class ProjectileMath {
         return (int) targetHealth * ampFactor;
     }
 
+    /**
+     * Range falloff (issue 539): the share of the damage a hit deals at {@code distance} from the turret. Full damage
+     * up to {@code optimalShare * range}, then linearly less down to {@code damageAtMaxRange} at {@code range}; hits
+     * beyond the range (a projectile can fly further) deal {@code damageAtMaxRange}. Both shares are clamped to 0–1;
+     * a range of 0 or less deals full damage.
+     *
+     * @param range            the turret's range with its upgrades
+     * @param optimalShare     {@link omtteam.openmodularturrets.core.settings.TurretStats#optimalRange}
+     * @param damageAtMaxRange {@link omtteam.openmodularturrets.core.settings.TurretStats#falloffDamage}
+     */
+    public static double falloff(double distance, double range, double optimalShare, double damageAtMaxRange) {
+        if (range <= 0) return 1.0D;
+        double minimum = Math.max(0.0D, Math.min(1.0D, damageAtMaxRange));
+        double optimal = Math.max(0.0D, Math.min(1.0D, optimalShare)) * range;
+        if (distance <= optimal) return 1.0D;
+        if (distance >= range) return minimum;
+        return 1.0D - (1.0D - minimum) * (distance - optimal) / (range - optimal);
+    }
+
     /** Grenades deal 90 % normal and 10 % armor-piercing damage. */
     public static Split grenadeSplit(int damage) {
         return new Split(damage * 0.9F, damage * 0.1F);
     }
 
+    /** {@link #grenadeSplit(int)} for damage with a fraction (after the range falloff). */
+    public static Split grenadeSplit(float damage) {
+        return new Split(damage * 0.9F, damage * 0.1F);
+    }
+
     /** Plasma deals half normal and half armor-piercing damage. */
     public static Split plasmaSplit(int damage) {
+        return new Split(damage * 0.5F, damage * 0.5F);
+    }
+
+    /** {@link #plasmaSplit(int)} for damage with a fraction (after the range falloff). */
+    public static Split plasmaSplit(float damage) {
         return new Split(damage * 0.5F, damage * 0.5F);
     }
 

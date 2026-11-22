@@ -11,6 +11,15 @@ class TurretStatsTest {
     void builderStartsAtTheCommonDefaults() {
         TurretStats stats = TurretStats.builder(24, 20, 6, 500).build();
         assertEquals(new TurretStats(true, 24, 20, 6, 500, 10, 4, 0.05D, 0.1D, 2, 0.2D, 0.08D, 0.1D, 0.05D), stats);
+        assertEquals(1.0D, stats.optimalRange(), "no falloff");
+        assertEquals(1.0D, stats.falloffDamage(), "no falloff");
+        assertEquals(0.0D, stats.turnRate(), "turns instantly");
+    }
+
+    @Test
+    void shortConstructorHasNoFalloffAndTurnsInstantly() {
+        assertEquals(new TurretStats(true, 24, 20, 6, 500, 10, 4, 0.05D, 0.1D, 2, 0.2D, 0.08D, 0.1D, 0.05D, 1, 1, 0),
+                new TurretStats(true, 24, 20, 6, 500, 10, 4, 0.05D, 0.1D, 2, 0.2D, 0.08D, 0.1D, 0.05D));
     }
 
     @Test
@@ -25,13 +34,17 @@ class TurretStatsTest {
                 .accuracyUpgrade(0.25D)
                 .efficiencyUpgrade(0.1D)
                 .recycler(0.2D, 0.3D)
+                .falloff(0.6D, 0.5D)
+                .turnRate(12)
                 .build();
-        assertEquals(new TurretStats(false, 24, 20, 6, 500, 15, 2, 0.07D, 0.15D, 3, 0.25D, 0.1D, 0.2D, 0.3D), stats);
+        assertEquals(new TurretStats(false, 24, 20, 6, 500, 15, 2, 0.07D, 0.15D, 3, 0.25D, 0.1D, 0.2D, 0.3D,
+                0.6D, 0.5D, 12), stats);
     }
 
     @Test
     void accessorsReturnTheirOwnValue() {
-        TurretStats stats = new TurretStats(false, 24, 20, 6, 500, 15, 2, 0.07D, 0.15D, 3, 0.25D, 0.1D, 0.2D, 0.3D);
+        TurretStats stats = new TurretStats(false, 24, 20, 6, 500, 15, 2, 0.07D, 0.15D, 3, 0.25D, 0.1D, 0.2D, 0.3D,
+                0.6D, 0.5D, 12);
         assertFalse(stats.enabled());
         assertEquals(24, stats.baseRange());
         assertEquals(20, stats.baseFireRate());
@@ -46,5 +59,8 @@ class TurretStatsTest {
         assertEquals(0.1D, stats.efficiencyUpgrade());
         assertEquals(0.2D, stats.recyclerNegateChance());
         assertEquals(0.3D, stats.recyclerAddChance());
+        assertEquals(0.6D, stats.optimalRange());
+        assertEquals(0.5D, stats.falloffDamage());
+        assertEquals(12, stats.turnRate());
     }
 }

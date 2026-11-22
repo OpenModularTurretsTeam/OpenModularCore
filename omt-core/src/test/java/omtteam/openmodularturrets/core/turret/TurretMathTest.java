@@ -136,4 +136,46 @@ class TurretMathTest {
         assertEquals(-20, TurretMath.angleDifference(10, 350), EPS);
         assertEquals(-180, TurretMath.angleDifference(0, 180), EPS);
     }
+
+    @Test
+    void turnTowardsStepsEachAxisByAtMostTheRate() {
+        TurretMath.Angles turned = TurretMath.turnTowards(new TurretMath.Angles(0, 0), new TurretMath.Angles(90, -20), 10);
+        assertEquals(10, turned.yaw(), EPS);
+        assertEquals(-10, turned.pitch(), EPS);
+        TurretMath.Angles pitchDone = TurretMath.turnTowards(new TurretMath.Angles(0, 0), new TurretMath.Angles(90, 4), 10);
+        assertEquals(10, pitchDone.yaw(), EPS);
+        assertEquals(4, pitchDone.pitch(), EPS, "an axis within reach arrives");
+    }
+
+    @Test
+    void turnTowardsArrivesExactlyWithinReach() {
+        TurretMath.Angles to = new TurretMath.Angles(33.3F, 12.1F);
+        assertEquals(to, TurretMath.turnTowards(new TurretMath.Angles(30, 10), to, 5));
+    }
+
+    @Test
+    void turnTowardsTakesTheShorterWayRound() {
+        TurretMath.Angles turned = TurretMath.turnTowards(new TurretMath.Angles(170, 0), new TurretMath.Angles(-170, 0), 5);
+        assertEquals(175, turned.yaw(), EPS);
+        TurretMath.Angles wrapped = TurretMath.turnTowards(new TurretMath.Angles(178, 0), new TurretMath.Angles(-150, 0), 5);
+        assertEquals(-177, wrapped.yaw(), EPS, "the yaw stays in [-180, 180)");
+    }
+
+    @Test
+    void turnTowardsWithoutRateIsInstant() {
+        TurretMath.Angles to = new TurretMath.Angles(-120, 60);
+        assertEquals(to, TurretMath.turnTowards(new TurretMath.Angles(0, 0), to, 0));
+        assertEquals(to, TurretMath.turnTowards(new TurretMath.Angles(0, 0), to, -3));
+    }
+
+    @Test
+    void aimErrorIsTheAngleBetweenTheDirections() {
+        assertEquals(0, TurretMath.aimError(new TurretMath.Angles(40, 10), new TurretMath.Angles(40, 10)), 1e-4);
+        assertEquals(30, TurretMath.aimError(new TurretMath.Angles(0, 0), new TurretMath.Angles(30, 0)), 1e-4);
+        assertEquals(30, TurretMath.aimError(new TurretMath.Angles(0, 0), new TurretMath.Angles(0, -30)), 1e-4);
+        assertEquals(180, TurretMath.aimError(new TurretMath.Angles(0, 0), new TurretMath.Angles(180, 0)), 1e-4);
+        assertEquals(0, TurretMath.aimError(new TurretMath.Angles(0, 90), new TurretMath.Angles(120, 90)), 1e-4,
+                "straight up, the yaw does not matter");
+        assertEquals(20, TurretMath.aimError(new TurretMath.Angles(170, 0), new TurretMath.Angles(-170, 0)), 1e-4);
+    }
 }

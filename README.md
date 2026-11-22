@@ -49,6 +49,7 @@ Tags follow semantic versioning: a public class leaving a module or a changed pu
 `MemoryCardRules.capture` and `apply` became `BaseCardRules` in `omt-core` (`omtteam.openmodularturrets.core.card`).
 It also brought back `MachineMode.byOrdinal(int, MachineMode)`.
 2.1.0 (additive) added switches for single upgrades and addons (`LogicSettings.upgradeEnabled` and `addonEnabled`, `default` methods that return `true`) and computer control of a base (`TurretBaseLogic.isComputerControlled`, `setComputerControlled`, `acceptsComputers`, the new component `computerControlled` of `TurretBaseLogic.State`, whose old constructor stays, and the package `omtteam.openmodularturrets.core.computer`).
+2.2.0 (additive) added range falloff and turn-rate limits for turrets (issue 539): the new components `optimalRange`, `falloffDamage` and `turnRate` of `TurretStats` (whose old constructor stays and gives no falloff and instant turning), `TurretStats.Builder.falloff` and `turnRate`, `ProjectileMath.falloff`, `TurretBaseLogic.getDamageFactor`, `TurretMath.turnTowards` and `aimError`, `LogicSettings.aimTolerance` (a `default` method that returns 5), and float overloads of `ProjectileMath.damageWithAmp`, `grenadeSplit` and `plasmaSplit`.
 
 The mods copy the core classes into their own jars, so players still install one jar per mod.
 

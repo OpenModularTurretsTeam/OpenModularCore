@@ -81,6 +81,15 @@ public interface LogicSettings {
     /** Entity type ids always treated as neutral ({@code general.neutralForceList}, conflicts removed). */
     Set<String> forcedNeutralEntities();
 
+    /**
+     * {@code turrets.aimTolerance}: a turret with a limited {@link TurretStats#turnRate} fires only once its aim is at
+     * most this many degrees off the target ({@link omtteam.openmodularturrets.core.turret.TurretMath#aimError}).
+     * Default 5.
+     */
+    default double aimTolerance() {
+        return 5.0D;
+    }
+
     /** {@code turrets.turretWarningDistance}. */
     int turretWarningDistance();
 

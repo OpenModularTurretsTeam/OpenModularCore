@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** A game layer that does not switch upgrades or addons off gets all of them enabled. */
@@ -44,5 +45,10 @@ class LogicSettingsDefaultsTest {
         for (AddonType type : AddonType.values()) {
             assertTrue(settings.addonEnabled(type), type::name);
         }
+    }
+
+    @Test
+    void aimToleranceIsFiveDegreesByDefault() {
+        assertEquals(5.0D, new WithoutSwitches().aimTolerance());
     }
 }

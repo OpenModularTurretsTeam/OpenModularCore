@@ -9,6 +9,7 @@ import omtteam.omlib.core.security.PlayerInfo;
 import omtteam.omlib.core.security.SecurityEnvironment;
 import omtteam.omlib.core.security.TrustManager;
 import omtteam.openmodularturrets.core.settings.BaseTierStats;
+import omtteam.openmodularturrets.core.settings.TurretStats;
 import omtteam.openmodularturrets.core.storage.SlotCapacity;
 import omtteam.openmodularturrets.core.target.EntityCategory;
 import omtteam.openmodularturrets.core.target.TargetEntity;
@@ -336,6 +337,21 @@ class TurretBaseLogicTest {
             assertEquals(24, logic.getTargetingSettings().getMaxRange(), "the max range follows the upgrades at once");
             assertEquals(syncsBefore + 1, syncCount, "clients show the new max range");
             assertEquals(dirtyBefore + 1, dirtyCount, "the inventory change is saved");
+        }
+
+        @Test
+        void damageFactorFollowsTheUpgradedRange() {
+            settings.turrets.put(TurretType.MACHINE_GUN_TURRET, TurretStats.builder(18, 8, 2, 100)
+                    .rangeUpgrade(2).falloff(0.5D, 0.4D).build());
+            TurretBaseLogic logic = base(5);
+            logic.updateNeighbours(turrets(TurretType.MACHINE_GUN_TURRET));
+            assertEquals(1.0D, logic.getDamageFactor(TurretType.MACHINE_GUN_TURRET, 9));
+            assertEquals(0.4D, logic.getDamageFactor(TurretType.MACHINE_GUN_TURRET, 18), 1.0E-9);
+            upgrade(0, TurretBaseUpgradeType.RANGE, 1);
+            logic.onInventoryChanged();
+            // range 20: full damage up to 10, 0.4 at 20
+            assertEquals(1.0D, logic.getDamageFactor(TurretType.MACHINE_GUN_TURRET, 10));
+            assertEquals(0.4D + 0.6D * 0.2D, logic.getDamageFactor(TurretType.MACHINE_GUN_TURRET, 18), 1.0E-9);
         }
 
         @Test

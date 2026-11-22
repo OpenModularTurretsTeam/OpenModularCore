@@ -16,6 +16,7 @@ import omtteam.openmodularturrets.core.storage.SlotCapacity;
 import omtteam.openmodularturrets.core.target.TargetEntity;
 import omtteam.openmodularturrets.core.target.TargetSelector;
 import omtteam.openmodularturrets.core.turret.AmmoType;
+import omtteam.openmodularturrets.core.turret.ProjectileMath;
 import omtteam.openmodularturrets.core.turret.TurretType;
 import omtteam.openmodularturrets.core.world.BaseWorld;
 import omtteam.openmodularturrets.core.world.Box;
@@ -472,6 +473,15 @@ public class TurretBaseLogic {
         TurretStats stats = settings.turret(type);
         double accuracy = stats.accuracyUpgrade() * getUpgradeCount(TurretBaseUpgradeType.ACCURACY);
         return stats.baseAccuracyDeviation() / Math.pow(1 + accuracy, 1.5D) * (1 + getScattershotCount(type) / 10F);
+    }
+
+    /**
+     * Share of the damage a hit of this turret deals at {@code distance} blocks from it (range falloff, see
+     * {@link ProjectileMath#falloff}), with the range of {@link #getRange}.
+     */
+    public double getDamageFactor(TurretType type, double distance) {
+        TurretStats stats = settings.turret(type);
+        return ProjectileMath.falloff(distance, getRange(type), stats.optimalRange(), stats.falloffDamage());
     }
 
     /** Damage bonus factor of the damage amp addon: {@code damageAmp * amp level} (3.x projectile code). */

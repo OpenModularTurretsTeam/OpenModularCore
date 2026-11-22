@@ -17,8 +17,52 @@ class ProjectileMathTest {
     }
 
     @Test
+    void floatAmpKeepsTheFraction() {
+        // (int) 7.9 = 7; 7 * 0.05 = 0.35, not rounded away
+        assertEquals(10.35F, ProjectileMath.damageWithAmp(10F, 1, 0.05D, 7.9F), 1.0E-5F);
+        assertEquals(2.5F, ProjectileMath.damageWithAmp(2.5F, 0, 0.5D, 100F), "no amp");
+        assertEquals(13, ProjectileMath.damageWithAmp(10, 1, 0.5D, 7F), "int arguments still pick the int overload");
+    }
+
+    @Test
+    void floatSplits() {
+        ProjectileMath.Split grenade = ProjectileMath.grenadeSplit(5.5F);
+        assertEquals(4.95F, grenade.normal(), 1.0E-5F);
+        assertEquals(0.55F, grenade.armorBypass(), 1.0E-5F);
+        ProjectileMath.Split plasma = ProjectileMath.plasmaSplit(3.5F);
+        assertEquals(1.75F, plasma.normal());
+        assertEquals(1.75F, plasma.armorBypass());
+    }
+
+    @Test
     void noAmpLeavesDamageUnchanged() {
         assertEquals(10, ProjectileMath.damageWithAmp(10, 0, 0.5D, 100F));
+    }
+
+    @Test
+    void falloffIsFullUpToTheOptimalRangeThenLinearDownToTheMinimum() {
+        // machine gun: range 18, optimal 0.6 (10.8 blocks), half damage at 18
+        assertEquals(1.0D, ProjectileMath.falloff(0, 18, 0.6D, 0.5D));
+        assertEquals(1.0D, ProjectileMath.falloff(10.8D, 18, 0.6D, 0.5D), EPS);
+        assertEquals(0.75D, ProjectileMath.falloff(14.4D, 18, 0.6D, 0.5D), EPS, "half way down");
+        assertEquals(0.5D, ProjectileMath.falloff(18, 18, 0.6D, 0.5D), EPS);
+        assertEquals(0.5D, ProjectileMath.falloff(25, 18, 0.6D, 0.5D), "beyond the range");
+    }
+
+    @Test
+    void falloffWithFullSharesIsOff() {
+        assertEquals(1.0D, ProjectileMath.falloff(10, 18, 1, 1));
+        assertEquals(1.0D, ProjectileMath.falloff(40, 18, 1, 1));
+        assertEquals(0.5D, ProjectileMath.falloff(18.5D, 18, 1, 0.5D), "an optimal range of 1 still weakens shots beyond it");
+    }
+
+    @Test
+    void falloffClampsItsInputs() {
+        assertEquals(1.0D, ProjectileMath.falloff(10, 0, 0.5D, 0.5D), "no range");
+        assertEquals(0.0D, ProjectileMath.falloff(20, 10, 0.5D, -1), "minimum below 0");
+        assertEquals(1.0D, ProjectileMath.falloff(20, 10, 0.5D, 3), "minimum above 1");
+        assertEquals(0.5D, ProjectileMath.falloff(5, 10, -1, 0), EPS, "optimal below 0 starts the drop at the turret");
+        assertEquals(1.0D, ProjectileMath.falloff(9, 10, 2, 0), "optimal above 1 is the whole range");
     }
 
     @Test

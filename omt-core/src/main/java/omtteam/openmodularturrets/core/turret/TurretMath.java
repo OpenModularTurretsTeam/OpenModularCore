@@ -138,6 +138,38 @@ public final class TurretMath {
     }
 
     /**
+     * One tick of a turret with a limited turn rate (issue 539): yaw (the shorter way round) and pitch each move at
+     * most {@code maxDegrees} towards {@code to}; once within reach the result is {@code to}. A {@code maxDegrees} of
+     * 0 or less turns instantly. The yaw stays in [-180, 180).
+     *
+     * @param maxDegrees {@link omtteam.openmodularturrets.core.settings.TurretStats#turnRate}
+     */
+    public static Angles turnTowards(Angles from, Angles to, float maxDegrees) {
+        if (maxDegrees <= 0.0F) return to;
+        float yawStep = angleDifference(from.yaw(), to.yaw());
+        float pitchStep = to.pitch() - from.pitch();
+        if (Math.abs(yawStep) <= maxDegrees && Math.abs(pitchStep) <= maxDegrees) return to;
+        float yaw = Math.abs(yawStep) <= maxDegrees ? to.yaw()
+                : from.yaw() + Math.copySign(maxDegrees, yawStep);
+        float pitch = Math.abs(pitchStep) <= maxDegrees ? to.pitch()
+                : from.pitch() + Math.copySign(maxDegrees, pitchStep);
+        return new Angles(angleDifference(0.0F, yaw), pitch);
+    }
+
+    /**
+     * Angle in degrees between the directions of two aims on the same face, 0–180: how far a turret aiming at
+     * {@code a} points off {@code b}.
+     */
+    public static double aimError(Angles a, Angles b) {
+        double yawA = Math.toRadians(a.yaw());
+        double pitchA = Math.toRadians(a.pitch());
+        double yawB = Math.toRadians(b.yaw());
+        double pitchB = Math.toRadians(b.pitch());
+        double cos = Math.cos(pitchA) * Math.cos(pitchB) * Math.cos(yawA - yawB) + Math.sin(pitchA) * Math.sin(pitchB);
+        return Math.toDegrees(Math.acos(Math.max(-1.0D, Math.min(1.0D, cos))));
+    }
+
+    /**
      * Shortest signed difference {@code to - from} in degrees, in [-180, 180).
      */
     public static float angleDifference(float from, float to) {

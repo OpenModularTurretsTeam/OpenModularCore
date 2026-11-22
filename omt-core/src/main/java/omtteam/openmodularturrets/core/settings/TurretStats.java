@@ -8,11 +8,36 @@ package omtteam.openmodularturrets.core.settings;
  * @param maxSimultaneous       maximum number of turrets of this type per base; only checked when placing, unless
  *                              {@link LogicSettings#dropTurretsOverMaxSimultaneous} drops attached turrets over it
  * @param rangeUpgrade          range added per range upgrade
+ * @param optimalRange          share of the turret's range (with upgrades) up to which it deals full damage, 0–1;
+ *                              see {@link omtteam.openmodularturrets.core.turret.ProjectileMath#falloff}
+ * @param falloffDamage         share of the damage dealt at the end of the range and beyond, 0–1; 1 with an
+ *                              {@code optimalRange} of 1 turns the falloff off
+ * @param turnRate              degrees the turret turns per tick (yaw and pitch each); 0 turns instantly
  */
 public record TurretStats(boolean enabled, int baseRange, int baseFireRate, int baseDamage, int powerUsage,
                           double baseAccuracyDeviation, int maxSimultaneous, double damageAmp,
                           double fireRateUpgrade, int rangeUpgrade, double accuracyUpgrade, double efficiencyUpgrade,
-                          double recyclerNegateChance, double recyclerAddChance) {
+                          double recyclerNegateChance, double recyclerAddChance, double optimalRange,
+                          double falloffDamage, double turnRate) {
+
+    /** Optimal range share without falloff. */
+    public static final double NO_FALLOFF_OPTIMAL_RANGE = 1.0D;
+    /** Damage share at the end of the range without falloff. */
+    public static final double NO_FALLOFF_DAMAGE = 1.0D;
+    /** Turn rate of a turret that turns instantly. */
+    public static final double INSTANT_TURN = 0.0D;
+
+    /**
+     * Stats without range falloff and with instant turning (the stats before core 2.2.0).
+     */
+    public TurretStats(boolean enabled, int baseRange, int baseFireRate, int baseDamage, int powerUsage,
+                       double baseAccuracyDeviation, int maxSimultaneous, double damageAmp,
+                       double fireRateUpgrade, int rangeUpgrade, double accuracyUpgrade, double efficiencyUpgrade,
+                       double recyclerNegateChance, double recyclerAddChance) {
+        this(enabled, baseRange, baseFireRate, baseDamage, powerUsage, baseAccuracyDeviation, maxSimultaneous,
+                damageAmp, fireRateUpgrade, rangeUpgrade, accuracyUpgrade, efficiencyUpgrade, recyclerNegateChance,
+                recyclerAddChance, NO_FALLOFF_OPTIMAL_RANGE, NO_FALLOFF_DAMAGE, INSTANT_TURN);
+    }
 
     /**
      * Stats with the given range, fire rate, damage and energy per shot; the other values start at those most
@@ -38,6 +63,9 @@ public record TurretStats(boolean enabled, int baseRange, int baseFireRate, int 
         private double efficiencyUpgrade = 0.08D;
         private double recyclerNegateChance = 0.1D;
         private double recyclerAddChance = 0.05D;
+        private double optimalRange = NO_FALLOFF_OPTIMAL_RANGE;
+        private double falloffDamage = NO_FALLOFF_DAMAGE;
+        private double turnRate = INSTANT_TURN;
 
         private Builder(int baseRange, int baseFireRate, int baseDamage, int powerUsage) {
             this.baseRange = baseRange;
@@ -101,11 +129,27 @@ public record TurretStats(boolean enabled, int baseRange, int baseFireRate, int 
             return this;
         }
 
+        /**
+         * Range falloff: full damage up to {@code optimalShare} of the range, then linearly less down to
+         * {@code damageAtMaxRange} at the end of the range. Default 1 and 1 (no falloff).
+         */
+        public Builder falloff(double optimalShare, double damageAtMaxRange) {
+            this.optimalRange = optimalShare;
+            this.falloffDamage = damageAtMaxRange;
+            return this;
+        }
+
+        /** Degrees the turret turns per tick, default 0 (turns instantly). */
+        public Builder turnRate(double degreesPerTick) {
+            this.turnRate = degreesPerTick;
+            return this;
+        }
+
         /** Creates the stats; values that were not set keep their defaults. */
         public TurretStats build() {
             return new TurretStats(enabled, baseRange, baseFireRate, baseDamage, powerUsage, baseAccuracyDeviation,
                     maxSimultaneous, damageAmp, fireRateUpgrade, rangeUpgrade, accuracyUpgrade, efficiencyUpgrade,
-                    recyclerNegateChance, recyclerAddChance);
+                    recyclerNegateChance, recyclerAddChance, optimalRange, falloffDamage, turnRate);
         }
     }
 
@@ -128,7 +172,10 @@ public record TurretStats(boolean enabled, int baseRange, int baseFireRate, int 
                 && Double.compare(accuracyUpgrade, other.accuracyUpgrade) == 0
                 && Double.compare(efficiencyUpgrade, other.efficiencyUpgrade) == 0
                 && Double.compare(recyclerNegateChance, other.recyclerNegateChance) == 0
-                && Double.compare(recyclerAddChance, other.recyclerAddChance) == 0;
+                && Double.compare(recyclerAddChance, other.recyclerAddChance) == 0
+                && Double.compare(optimalRange, other.optimalRange) == 0
+                && Double.compare(falloffDamage, other.falloffDamage) == 0
+                && Double.compare(turnRate, other.turnRate) == 0;
     }
 
     @Override
@@ -146,6 +193,9 @@ public record TurretStats(boolean enabled, int baseRange, int baseFireRate, int 
         h = 31 * h + Double.hashCode(accuracyUpgrade);
         h = 31 * h + Double.hashCode(efficiencyUpgrade);
         h = 31 * h + Double.hashCode(recyclerNegateChance);
-        return 31 * h + Double.hashCode(recyclerAddChance);
+        h = 31 * h + Double.hashCode(recyclerAddChance);
+        h = 31 * h + Double.hashCode(optimalRange);
+        h = 31 * h + Double.hashCode(falloffDamage);
+        return 31 * h + Double.hashCode(turnRate);
     }
 }
